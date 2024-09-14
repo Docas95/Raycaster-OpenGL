@@ -12,6 +12,7 @@
 
 #include "Shader.h"
 #include "Camera.h"
+#include "Raycaster.h"
 
 // Global vars
 // -----------
@@ -20,58 +21,27 @@ const char* vertexShaderSource = "vertexShader.txt";
 const char* fragmentShaderSource = "fragmentShader.txt";
 
 GLFWwindow* window;
-const int winWidth = 800;
-const int winHeight = 600;
+float winWidth = 1024.0;
+float winHeight = 512.0;
 
+Raycaster raycaster;
 
 // Prototypes
 // ----------
-void setup();
+void init();
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void handleInput(GLFWwindow* window);
 
 int main(void) {
 
-	setup();
-
-	// Set up vertex data and configure vertex attributes
-	float vertexData[] = {
-		// Coords			// Color
-		0.5, -0.5, 0.0,		1.0, 0.0, 0.0,
-	   -0.5, -0.5, 0.0,		0.0, 1.0, 0.0,
-	    0.0,  0.5, 0.0,		0.0, 0.0, 1.0
-	};
-
-	unsigned int VBO, VAO;
-	glGenBuffers(1, &VBO);
-	glGenVertexArrays(1, &VAO);
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) (3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	glBindVertexArray(0);
+	init();
 
 	// Main Loop
 	// ---------
 	while (!glfwWindowShouldClose(window)) {
 		handleInput(window);
 
-		// Draw triangle
-		glClearColor(0.7, 0.7, 0.7, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		shaderProgram.use();
-		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		glBindVertexArray(0);
+		raycaster.display();
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -82,7 +52,7 @@ int main(void) {
 	return 0;
 }
 
-void setup() {
+void init() {
 	// Initial Set up
 	// --------------
 
@@ -105,9 +75,18 @@ void setup() {
 	// Set up Shader Program
 	// ---------------------
 	shaderProgram = Shader(vertexShaderSource, fragmentShaderSource);
+
+	// Set up Raycaster
+	// ----------------
+	raycaster = Raycaster(shaderProgram, winWidth, winHeight);
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
+	winWidth = width;
+	winHeight = height;
+
+	raycaster.setWindowXY(winWidth, winHeight);
+	
 	glViewport(0, 0, width, height);
 }
 
