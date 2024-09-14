@@ -10,26 +10,39 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Shader.h"
+#include "Player.h"
+
+enum KEYS {
+	RAY_UP = 1,
+	RAY_DOWN,
+	RAY_LEFT,
+	RAY_RIGHT,
+};
 
 class Raycaster
 {
 	private:
+		// Shader data
+		// -----------
 		Shader shaderProgram;
 		unsigned int VAO, VBO, EBO;
 		float winWidth, winHeight;
 
 		// Player Data
 		// -----------
-		glm::vec2 playerPos;
-		float* playerVertex;
-		unsigned int* playerIndices;
-		glm::vec3 playerColor;
+		Player player;
+
+		// Frame Data
+		// ----------
+		double lastFrame;
 	public:
 		Raycaster();
 		Raycaster(Shader s, float width, float height);
 
 		void display();
 		void drawPlayer();
+
+		void movePlayer(int direction);
 
 		void setWindowXY(float width, float height);
 };
