@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
-#define PI 3.1415926535
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -15,6 +14,9 @@
 #include "Shader.h"
 #include "Player.h"
 #include "Map.h"
+
+#define PI 3.1415926535
+#define RADIANS 0.0174533
 
 enum KEYS {
 	RAY_UP = 1,
@@ -47,11 +49,13 @@ class Raycaster
 		void display();
 		void drawPlayer();
 		void drawMap();
-		void drawRays3D();
+		void drawRays2D();
 		void drawLine(float vertices[6], glm::vec3 color, float lineWidth);
 
 		void movePlayer(int direction);
 
 		void setWindowXY(float width, float height);
+
+		float calculateDistance(float ax, float ay, float bx, float by);
 };
 
