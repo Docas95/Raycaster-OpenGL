@@ -47,6 +47,8 @@ class Raycaster
 		void display();
 		void drawPlayer();
 		void drawMap();
+		void drawRays3D();
+		void drawLine(float vertices[6], glm::vec3 color, float lineWidth);
 
 		void movePlayer(int direction);
 
