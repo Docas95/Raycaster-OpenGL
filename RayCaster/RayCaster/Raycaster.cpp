@@ -5,28 +5,59 @@ Raycaster::Raycaster() {
 }
 
 Raycaster::Raycaster(Shader s, float width, float height) {
+	// Shader data
+	// -----------
 	shaderProgram = s;
 	winWidth = width;
 	winHeight = height;
 	lastFrame = 0.0;
 	
-	glm::vec2 playerPos = glm::vec2(0.0, -0.1);
+	// Player data
+	// -----------
+	glm::vec2 playerPos = glm::vec2(300, 300);
 	glm::vec3 playerColor = glm::vec3(1.0, 1.0, 0.0);
-	float playerSpeed = 0.5;
+	float playerSpeed = 128;
+	player = Player(playerPos, playerColor, playerSpeed);
 
-	static float vertices[] = {
-		0.01,  0.01, 0.0, // Top Right
-	   -0.01,  0.01, 0.0, // Top Left
-		0.01, -0.01, 0.0, // Bottom Right
-	   -0.01, -0.01, 0.0  // Bottom Left
+	// Map data
+	// --------
+	std::vector<int> m = {
+		1, 1, 1, 1, 1, 1, 1, 1,
+		1, 0, 1, 0, 0, 0, 0, 1,
+		1, 0, 1, 0, 0, 0, 0, 1,
+		1, 0, 1, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 1, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 1, 1, 1, 1, 1, 1, 1
+	};
+	map = Map(8, 8, m, 64);
+
+	// Load vertex data and define vertexAttributes
+	// --------------------------------------------
+	float vertices[] = {
+		// Player
+		 4.00,  4.00, 0.0, // Top Right
+	    -4.00,  4.00, 0.0, // Top Left
+		 4.00, -4.00, 0.0, // Bottom Right
+	    -4.00, -4.00, 0.0,  // Bottom Left
+
+	    // Wall
+		 32.00,  32.00, 0.0, // Top Right
+		-32.00,  32.00, 0.0, // Top Left
+		 32.00, -32.00, 0.0, // Bottom Right
+		-32.00, -32.00, 0.0  // Bottom Left
 	};
 
-	static unsigned int indices[] = {
+	unsigned int indices[] = {
+		// Player
 		0, 1, 2,
-		1, 2, 3
-	};
+		1, 2, 3,
 
-	player = Player(playerPos, playerColor, playerSpeed, vertices, sizeof(vertices), indices, sizeof(indices));
+		// Wall
+		4, 5, 6,
+		5, 6, 7
+	};
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -54,20 +85,18 @@ void Raycaster::display() {
 
 	shaderProgram.use();
 
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	shaderProgram.setMat4("view", view);
-
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), winWidth / winHeight, 0.1f, 100.0f);
+	glm::mat4 projection = glm::ortho(0.0f, 1024.0f, 512.0f, 0.0f);
 	shaderProgram.setMat4("projection", projection);
 
+	drawMap();
 	drawPlayer();
 
 	glUseProgram(0);
 }
 
 void Raycaster::drawPlayer() {
-	// Move player
-	// -----------
+	// Move player to correct position
+	// -------------------------------
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(player.getPosition(), 0.0));
 	shaderProgram.setMat4("model", model);
@@ -79,6 +108,32 @@ void Raycaster::drawPlayer() {
 	glBindVertexArray(0);
 }
 
+void Raycaster::drawMap() {
+	glm::mat4 model;
+	glm::vec2 wallPosition;
+	glm::vec3 wallColor;
+	float wallSize = map.getWallSize();
+
+	std::vector<int> m = map.getMapMap();
+	int x = map.getMapX();
+	int y = map.getMapY();
+
+	glBindVertexArray(VAO);
+	for (int i = 0; i < y; i++) {
+		for (int j = 0; j < x; j++) {
+			wallPosition = glm::vec2(32, 32) + glm::vec2(j * (wallSize+2), i * (wallSize+2));
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, glm::vec3(wallPosition, 0.0));
+			shaderProgram.setMat4("model", model);
+
+			m[i * x + j] == 1 ? wallColor = glm::vec3(1.0, 1.0, 1.0) : wallColor = glm::vec3(0.0, 0.0, 0.0);
+			shaderProgram.setVec3("pColor", wallColor);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(6 * sizeof(unsigned int)));
+		}
+	}
+	glBindVertexArray(0);
+}
+
 void Raycaster::movePlayer(int direction) {
 	double currentFrame = glfwGetTime();
 	double speed = player.getSpeed() * (currentFrame - lastFrame);
@@ -87,10 +142,10 @@ void Raycaster::movePlayer(int direction) {
 	glm::vec2 playerPos = player.getPosition();
 	switch (direction) {
 		case RAY_UP:
-			playerPos += glm::vec2(0, speed);
+			playerPos -= glm::vec2(0, speed);
 			break;
 		case RAY_DOWN:
-			playerPos -= glm::vec2(0, speed);
+			playerPos += glm::vec2(0, speed);
 			break;
 		case RAY_LEFT:
 			playerPos -= glm::vec2(speed, 0);
