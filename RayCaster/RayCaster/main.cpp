@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -12,6 +13,7 @@
 
 #include "Shader.h"
 #include "Raycaster.h"
+#include "Player.h"
 
 // Global vars
 // -----------
@@ -62,7 +64,7 @@ void init() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// GLFW: create window
-	window = glfwCreateWindow(winWidth, winHeight, "Hello Textures", NULL, NULL);
+	window = glfwCreateWindow(winWidth, winHeight, "Hello Raytracing", NULL, NULL);
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
@@ -77,7 +79,20 @@ void init() {
 
 	// Set up Raycaster
 	// ----------------
-	raycaster = Raycaster(shaderProgram, winWidth, winHeight);
+	std::vector<int> map = {
+		1, 1, 1, 1, 1, 1, 1, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 1, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 0, 0, 2, 2, 2, 0, 1,
+		1, 0, 0, 0, 0, 0, 0, 1,
+		1, 1, 1, 1, 1, 1, 1, 1
+	};
+
+	Player p = Player(glm::vec2(100, 200), glm::vec3(1.0, 1.0, 0.0), 32.0);
+
+	raycaster = Raycaster(shaderProgram, winWidth, winHeight, map, 8, 8, p);
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {

@@ -44,7 +44,7 @@ class Raycaster
 		Map map;
 	public:
 		Raycaster();
-		Raycaster(Shader s, float width, float height);
+		Raycaster(Shader s, float width, float height, std::vector<int> map, int mapX, int mapY, Player p);
 
 		void display();
 		void drawPlayer();

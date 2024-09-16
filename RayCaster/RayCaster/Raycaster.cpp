@@ -4,7 +4,7 @@ Raycaster::Raycaster() {
 
 }
 
-Raycaster::Raycaster(Shader s, float width, float height) {
+Raycaster::Raycaster(Shader s, float width, float height, std::vector<int> m, int mapX, int mapY, Player p) {
 	// Shader data
 	// -----------
 	shaderProgram = s;
@@ -14,24 +14,11 @@ Raycaster::Raycaster(Shader s, float width, float height) {
 	
 	// Player data
 	// -----------
-	glm::vec2 playerPos = glm::vec2(200, 200);
-	glm::vec3 playerColor = glm::vec3(1.0, 1.0, 0.0);
-	float playerSpeed = 32.0;
-	player = Player(playerPos, playerColor, playerSpeed);
+	player = p;
 
 	// Map data
 	// --------
-	std::vector<int> m = {
-		1, 1, 1, 1, 1, 1, 1, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 1, 0, 1,
-		1, 0, 0, 1, 1, 1, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 0, 0, 0, 0, 0, 0, 1,
-		1, 1, 1, 1, 1, 1, 1, 1
-	};
-	map = Map(8, 8, m, 64);
+	map = Map(mapX, mapY, m, mapX * mapY);
 
 	// Load vertex data and define vertexAttributes
 	// --------------------------------------------
@@ -80,6 +67,8 @@ Raycaster::Raycaster(Shader s, float width, float height) {
 void Raycaster::display() {
 	lastFrame = glfwGetTime();
 
+	// Clear screen
+	// ------------
 	glClearColor(0.3, 0.3, 0.3, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -96,7 +85,7 @@ void Raycaster::display() {
 }
 
 void Raycaster::drawPlayer() {
-	// Move player to correct position
+	// Draw player
 	// -------------------------------
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::translate(model, glm::vec3(player.getPosition(), 0.0));
@@ -134,12 +123,14 @@ void Raycaster::drawMap() {
 	glBindVertexArray(VAO);
 	for (int i = 0; i < y; i++) {
 		for (int j = 0; j < x; j++) {
-			wallPosition = glm::vec2(32, 32) + glm::vec2(j * (wallSize+2), i * (wallSize+2));
+			// Set wall position
+			wallPosition = glm::vec2(32, 32) + glm::vec2(j * (wallSize+1), i * (wallSize+1));
 			model = glm::mat4(1.0f);
 			model = glm::translate(model, glm::vec3(wallPosition, 0.0));
 			shaderProgram.setMat4("model", model);
 
-			m[i * x + j] == 1 ? wallColor = glm::vec3(1.0, 1.0, 1.0) : wallColor = glm::vec3(0.0, 0.0, 0.0);
+			// Draw wall
+			m[i * x + j] >= 1 ? wallColor = glm::vec3(1.0, 1.0, 1.0) : wallColor = glm::vec3(0.0, 0.0, 0.0);
 			shaderProgram.setVec3("pColor", wallColor);
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(6 * sizeof(unsigned int)));
 		}
@@ -182,18 +173,18 @@ void Raycaster::drawRays2D() {
 		if (ra == 0 || ra == PI) { // looking left or right
 			rx = playerPos.x;
 			ry = playerPos.y;
-			dof = 8;
+			dof = mapX;
 		}
 		while (dof < mapX) {
 			mx = (int)(rx) >> 6;
 			my = (int)(ry) >> 6;
 			mp = my * mapX + mx;
 			if (mx >= 0 && mx < mapX && my >= 0 && my < mapY) {
-				if (mp < mapX * mapY && mapMap[mp] == 1) { // hit wall
+				if (mp < mapX * mapY && mapMap[mp] >= 1) { // hit wall
 					hx = rx;
 					hy = ry;
 					distH = calculateDistance(hx, hy, playerPos.x, playerPos.y);
-					dof = 8;
+					dof = mapX;
 				}
 				else {
 					rx += xo;
@@ -202,7 +193,7 @@ void Raycaster::drawRays2D() {
 				}
 			}
 			else {
-				dof = 8;
+				dof = mapX;
 			}
 		}
 
@@ -226,18 +217,18 @@ void Raycaster::drawRays2D() {
 		if (ra == PI/2 || ra == 3 * PI/2) { // looking up or down
 			ry = playerPos.y;
 			rx = playerPos.x;
-			dof = 8;
+			dof = mapY;
 		}
 		while (dof < mapY) {
 			mx = (int)(rx) >> 6;
 			my = (int)(ry) >> 6;
 			mp = my * mapX + mx;
 			if (mx >= 0 && mx < mapX && my >= 0 && my < mapY) {
-				if (mp < mapX * mapY && mapMap[mp] == 1) { // hit wall
+				if (mp < mapX * mapY && mapMap[mp] >= 1) { // hit wall
 					vx = rx;
 					vy = ry;
 					distV = calculateDistance(vx, vy, playerPos.x, playerPos.y);
-					dof = 8;
+					dof = mapY;
 				}
 				else {
 					rx += xo;
@@ -246,37 +237,56 @@ void Raycaster::drawRays2D() {
 				}
 			}
 			else {
-				dof = 8;
+				dof = mapY;
 			}
 		}
 
+		// Find nearest wall
+		// -----------------
 		if (distV < distH) {
-			rx = vx; ry = vy; distT = distV; wallColor = glm::vec3(0.9f, 0.0, 0.0);
+			rx = vx; ry = vy; distT = distV;
 		}
 		if (distH < distV) {
-			rx = hx; ry = hy; distT = distH; wallColor = glm::vec3(0.6f, 0.0, 0.0);
+			rx = hx; ry = hy; distT = distH;
 		}
+
+		// Assign color to 3D wall
+		// -----------------------
+		mx = (int)(rx) >> 6;
+		my = (int)(ry) >> 6;
+		mp = my * mapX + mx;
+		if (mx >= 0 && mx < mapX && my >= 0 && my < mapY) {
+			if (mapMap[mp] == 1) {
+				wallColor = glm::vec3(0.9, 0.0, 0.0);
+			}
+			else {
+				wallColor = glm::vec3(0.0, 0.0, 0.9);
+			}
+		}
+		if (distV < distH) wallColor = 0.7f * wallColor;
 
 		float lineVertices[6] = {
 			playerPos.x, playerPos.y, 0.0,
 			rx, ry, 0.0
 		};
-		drawLine(lineVertices, glm::vec3(1.0, 0.0, 0.0), 3.0);
+		drawLine(lineVertices,wallColor, 3.0);
 
-		// Draw 3D walls
+		// Draw 3D wall
 		// -------------
 		float ca = player.getAngle() - ra;
 		if (ca < 0) ca += 2 * PI;
 		if (ca > 2 * PI) ca -= 2 * PI;
 		distT = distT * cos(ca);
-		float lineH = (map.getWallSize() * 320) / distT; //  fix fisheye
+
+		float lineH = (map.getWallSize() * 320) / distT; 
 		float lineOffset = 160 - lineH / 2;
 		if (lineH > winHeight * 2.0) lineH = winHeight * 2.0;
+
 		float lineWallVertices[6] = {
-			r * 8 + 530, lineOffset, 0.0,
-			r * 8 + 530, lineH + lineOffset, 0.0
+			r * 8 + 530 + 8, lineOffset, 0.0,
+			r * 8 + 530 + 8, lineH + lineOffset, 0.0
 		};
-		drawLine(lineWallVertices, wallColor, 8.0);
+		drawLine(lineWallVertices, wallColor, winWidth / 128.0);
 
 		// Increment ray angle
 		// -------------------
