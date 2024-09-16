@@ -53,6 +53,7 @@ class Raycaster
 		void drawLine(float vertices[6], glm::vec3 color, float lineWidth);
 
 		void movePlayer(int direction);
+		bool checkPlayerCollision(float deltaTime, int direction);
 
 		void setWindowXY(float width, float height);
 

@@ -333,9 +333,11 @@ void Raycaster::movePlayer(int direction) {
 	float playerAngle = player.getAngle();
 	switch (direction) {
 		case RAY_UP:
+			if (checkPlayerCollision(deltaTime, RAY_UP)) break;
 			playerPos += glm::vec2(playerDeltaPos.x * player.getSpeed() * deltaTime, playerDeltaPos.y * player.getSpeed() * deltaTime);
 			break;
 		case RAY_DOWN:
+			if (checkPlayerCollision(deltaTime, RAY_DOWN)) break;
 			playerPos -= glm::vec2(playerDeltaPos.x * player.getSpeed() * deltaTime, playerDeltaPos.y * player.getSpeed() * deltaTime);
 			break;
 		case RAY_LEFT:
@@ -366,4 +368,30 @@ void Raycaster::setWindowXY(float width, float height)
 
 float Raycaster::calculateDistance(float ax, float ay, float bx, float by) {
 	return sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
+}
+
+bool Raycaster::checkPlayerCollision(float deltaTime, int direction) {
+	glm::vec2 playerPos = player.getPosition();
+	glm::vec2 playerDeltaPos = player.getDeltaPosition();
+	float speed = player.getSpeed();
+	
+	if (direction == RAY_UP) {
+		playerPos += glm::vec2(playerDeltaPos.x * speed * deltaTime, playerDeltaPos.y * speed * deltaTime);
+
+	}
+	else if (direction == RAY_DOWN) {
+		playerPos -= glm::vec2(playerDeltaPos.x * speed * deltaTime, playerDeltaPos.y * speed * deltaTime);
+	}
+
+	playerPos.x = ((int) playerPos.x >> 6);
+	playerPos.y = ((int) playerPos.y >> 6);
+
+	int mapX = map.getMapX();
+	int mapY = map.getMapY();
+	std::vector<int> m = map.getMapMap();
+
+	if (playerPos.x >= 0 && playerPos.x < mapX && playerPos.y >= 0 && playerPos.y < mapY) {
+		return m[playerPos.x + playerPos.y * mapX] >= 1;
+	}
+	return true;
 }
