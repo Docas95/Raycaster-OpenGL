@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <vector>
 
 #include "glad/glad.h"
@@ -12,14 +13,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "../shaders/Shader.h"
-#include "../Raycaster.h"
-#include "../Player.h"
+#include "../raycaster/Raycaster.h"
+#include "../raycaster/Player.h"
 
 // Global vars
 // -----------
 Shader shaderProgram;
-const char* vertexShaderSource = "vertexShader.txt";
-const char* fragmentShaderSource = "fragmentShader.txt";
+const char* vertexShaderSource = "shaders/vertexShader.txt";
+const char* fragmentShaderSource = "shaders/fragmentShader.txt";
 
 GLFWwindow* window;
 float winWidth = 1024.0;
@@ -34,7 +35,6 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void handleInput(GLFWwindow* window);
 
 int main(void) {
-
 	init();
 
 	// Main Loop

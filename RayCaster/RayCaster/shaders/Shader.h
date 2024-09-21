@@ -44,6 +44,8 @@ public:
 		}
 		catch (std::ifstream::failure e) {
 			std::cout << "ERROR READING SHADER FILES\n" << std::endl;
+			std::cout << vertexPath << std::endl;
+			std::cout << fragmentPath << std::endl;
 			return;
 		}
 
@@ -107,7 +109,6 @@ public:
 
 	void setFloat(const std::string& name, float value) const {
 		int uniformLocation = glGetUniformLocation(ID, name.c_str());
-		std::cout << uniformLocation;
 		glUniform1f(uniformLocation, value);
 	}
 
